@@ -11,14 +11,22 @@ def convert_data_to_arrays(data):
 
     for row in data.iterrows():
 
-          
-        vector = [row[1][3],row[1][4],row[1][5],row[1][6]]
+        #row[0] is record id 1,2,3...
+        #row[1][0] contains the asset
+        #row[1][1] contains the date
+        #row[2][0-(last-2)] contains all features
+        #row[1][last-1] contains the label
+
+        vector = []
+
+        for i in range(2,(len(row[1])-2)):
+            vector.append(row[1][i])
+
         arr = np.array(vector)
         arr = arr.astype(np.float32)
         list_of_vectors.append(arr)
 
-        
-        if(int(row[1][7])==0):
+        if(int(row[1][(len(row[1])-2)])==0):
             label = [0,1]
         else:
             label = [1,0]
@@ -27,7 +35,9 @@ def convert_data_to_arrays(data):
         arr = arr.astype(np.float32)
         list_of_labels.append(arr)
 
-    return np.array(list_of_vectors),np.array(list_of_labels)
+    feature_num = len(row[1])-4
+
+    return np.array(list_of_vectors),np.array(list_of_labels), feature_num
 
 def load_dataset(dir_name):
 	
