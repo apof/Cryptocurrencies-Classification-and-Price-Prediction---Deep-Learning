@@ -6,18 +6,19 @@ import numpy as np
 #import matplotlib.pyplot as plt
 import utils
 
-DATA_DIR = "../Datasets/all_vectors_merged.csv"
+DATA_DIR = "../Datasets/all_vectors_merged_timeseries.csv"
 
 # Parameters
 learning_rate = 0.001
-training_epochs = 3000
+training_epochs = 2000
 batch_size = 32
 display_step = 100
 
 # Network Parameters
-n_hidden_1 = 64 # 1st layer number of neurons
-n_hidden_2 = 128 # 2nd layer number of neurons
-num_input = 12 # input vector size
+n_hidden_1 = 128 # 1st layer number of neurons
+n_hidden_2 = 256 # 2nd layer number of neurons
+n_hidden_3 = 128 # 3rd layer number of neurons
+num_input = 18*4 # input vector size
 num_classes = 2 # 2 classes good-bad
 
 # tf Graph input
@@ -28,11 +29,13 @@ Y = tf.placeholder("float", [None, num_classes])
 weights = {
     'h1': tf.Variable(tf.random_normal([num_input, n_hidden_1])),
     'h2': tf.Variable(tf.random_normal([n_hidden_1, n_hidden_2])),
-    'out': tf.Variable(tf.random_normal([n_hidden_2, num_classes]))
+    'h3': tf.Variable(tf.random_normal([n_hidden_2, n_hidden_3])),
+    'out': tf.Variable(tf.random_normal([n_hidden_3, num_classes]))
 }
 biases = {
     'b1': tf.Variable(tf.random_normal([n_hidden_1])),
     'b2': tf.Variable(tf.random_normal([n_hidden_2])),
+    'b3': tf.Variable(tf.random_normal([n_hidden_3])),
     'out': tf.Variable(tf.random_normal([num_classes]))
 }
 
@@ -44,8 +47,11 @@ def neural_net(x,weights, biases):
     # Hidden fully connected layer with 16 neurons
     layer_2 = tf.add(tf.matmul(layer_1, weights['h2']), biases['b2'])
     layer_2 = tf.nn.relu(layer_2)
+    # Hidden fully connected layer with 16 neurons
+    layer_3 = tf.add(tf.matmul(layer_2, weights['h3']), biases['b3'])
+    layer_3 = tf.nn.relu(layer_3)    
     # Output fully connected layer with a neuron for each class
-    out_layer = tf.matmul(layer_2, weights['out']) + biases['out']
+    out_layer = tf.matmul(layer_3, weights['out']) + biases['out']
     return out_layer
 
 
@@ -68,6 +74,9 @@ train,test = utils.smash_train_test(data)
 
 train_inputs,train_labels,feature_num = utils.convert_data_to_arrays(train)
 test_inputs,test_labels,feature_num = utils.convert_data_to_arrays(test)
+
+print(train_inputs.shape)
+print(test_inputs.shape)
 
 if(len(train_labels) % batch_size == 0):
     train_iters = len(train_labels) / batch_size
