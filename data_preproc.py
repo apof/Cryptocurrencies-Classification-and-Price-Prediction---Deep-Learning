@@ -4,6 +4,8 @@ import utils
 import pandas as pd
 import time
 from datetime import datetime
+import math
+
 
 ## labelling taking into account the previous and the next day value
 def next_prev_labeling(price):
@@ -275,6 +277,55 @@ def convert_data_to_timeseries(values,window):
 
 	return timeseries_dictionary
 
+def data_normalize(data):
+
+	dim = len(data[0])
+	num = len(data)
+
+	normalized_list = []
+	for i in range(0,num):
+		normalized_list.append([])
+
+	mean_val = []
+	for i in range(0,dim):
+		sum = 0.0
+		flag = 1
+		for d in data:
+				if(i!=0 and i!=1 and i!=(dim-1)):
+					sum += float(d[i])
+				else:
+					flag = 0
+		if(flag!=0):
+			mean_val.append(sum/num)
+
+
+	st = []
+	for i in range(0,dim):
+		sum = 0.0
+		flag = 1
+		for d in data:
+			if(i!=0 and i!=1 and i!=(dim-1)):
+				sum += (float(d[i]) - mean_val[i-2])*(float(d[i]) - mean_val[i-2])
+			else:
+				flag = 0
+
+		if(flag!=0):
+			st.append(math.sqrt(sum/(num-1)))
+
+
+	for i in range(0,num):
+		for j in range(0,dim):
+			if(j==0 or j==1 or j==(dim-1)):
+				normalized_list[i].append(data[i][j])
+			else:
+				if(st[j-2]==0):
+					normalized_list[i].append(st[j-2])
+				else:
+					normalized_list[i].append((float(data[i][j])-mean_val[j-2])/st[j-2])
+
+	return normalized_list
+
+
 
 def save_data_as_timeseries(merged_dict,assets_number,window):
 
@@ -294,7 +345,8 @@ def save_data_as_timeseries(merged_dict,assets_number,window):
 	for i in range(len(assets_number)):
 		end = end + int(assets_number[i])
 		# normalization of every asset may be here
-		t_dict =  convert_data_to_timeseries(l[start:end],window)
+		normalized_data = data_normalize(l[start:end])
+		t_dict =  convert_data_to_timeseries(normalized_data,window)
 		start = end
 		timeseries_dictionary =  merge_two_dicts(timeseries_dictionary,t_dict)
 
@@ -374,7 +426,7 @@ def main():
 		w.writerow(l)
 
 	### the final timeseries dictionary is being converted into csv file
-	w = csv.writer(open("../Datasets/all_vectors_merged_timeseries.csv", "w"))
+	w = csv.writer(open("../Datasets/normalized_all_vectors_merged_timeseries.csv", "w"))
 	w.writerow(col_names_timeseries_new)
 	for key in sorted(time_dict.keys()):
 		l = [str(key[0]),str(key[1])]
