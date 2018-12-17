@@ -7,11 +7,11 @@ import numpy as np
 import utils
 from sklearn.metrics import f1_score, accuracy_score, recall_score, precision_score
 
-DATA_DIR = "../Datasets/normalized_all_vectors_merged_timeseries.csv"
+DATA_DIR = "../Datasets/normalized_all_vectors_merged_timeseries_btc_only.csv"
 
-epochs = 20
+epochs = 3
 n_classes = 1
-n_units = 400
+n_units = 600
 n_features = 18*4
 batch_size = 32
 
@@ -71,15 +71,9 @@ with tf.Session() as sess:
 
 	print("Optimization Finished!")
 
-	correct_prediction = tf.equal(tf.argmax(logit, 1), tf.argmax(yplaceholder, 1))
-	# Calculate accuracy
-	pred = tf.round(tf.nn.sigmoid(logit)).eval({xplaceholder: np.array(train_inputs), yplaceholder: np.array(train_labels)})
-	f1 = f1_score(np.array(train_labels), pred, average='macro')
-	accuracy=accuracy_score(np.array(train_labels), pred)
-	recall = recall_score(y_true=np.array(train_labels), y_pred= pred)
-	precision = precision_score(y_true=np.array(train_labels), y_pred=pred)
-	print("F1 Score:", f1)
-	print("Accuracy Score:",accuracy)
-	print("Recall:", recall)
-	print("Precision:", precision)
+	correct_preds = tf.round(tf.nn.sigmoid(logit)) 
 
+	accuracy = tf.reduce_mean(tf.cast(correct_preds, "float"))
+
+	# Calculate accuracy
+	print("Accuracy: ",accuracy.eval({xplaceholder: np.array(test_inputs), yplaceholder: np.array(test_labels)}))
