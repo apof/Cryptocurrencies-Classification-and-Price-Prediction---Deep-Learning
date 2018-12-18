@@ -3,14 +3,13 @@ import tensorflow as tf
 
 # Helper libraries
 import numpy as np
-#import matplotlib.pyplot as plt
 import utils
 
 DATA_DIR = "../Datasets/normalized_all_vectors_merged_timeseries_btc_only.csv"
 
 # Parameters
 learning_rate = 0.001
-training_epochs = 1500
+training_epochs = 400
 batch_size = 32
 display_step = 100
 
@@ -72,14 +71,18 @@ data = utils.load_dataset(DATA_DIR)
 
 train,test = utils.smash_train_test(data)
 
-train_inputs,train_labels,feature_num = utils.convert_data_to_arrays(train)
-test_inputs,test_labels,feature_num = utils.convert_data_to_arrays(test)
-
+train_inputs,train_labels,feature_num = utils.convert_data_to_arrays(train,0)
+test_inputs,test_labels,feature_num = utils.convert_data_to_arrays(test,0)
 
 if(len(train_labels) % batch_size == 0):
     train_iters = len(train_labels) / batch_size
 else:
     train_iters = len(train_labels) / batch_size + 1
+
+if(len(test_labels) % batch_size == 0):
+	test_iters = len(test_labels) / batch_size
+else:
+	test_iters = len(test_labels) / batch_size + 1
 
 print("Optimization starting..")
 
@@ -105,13 +108,41 @@ with tf.Session() as sess:
         # Display logs per epoch step
         if epoch % display_step == 0:
            print("Epoch:", '%04d' % (epoch+1), "cost=", "{:.9f}".format(avg_cost))
+
     print("Optimization Finished!")
 
-    correct_prediction = tf.equal(tf.argmax(logits, 1), tf.argmax(Y, 1))
+
+    print("Testing starting..")
+
+    #correct_prediction = tf.equal(tf.argmax(logits, 1), tf.argmax(Y, 1))
     # Calculate accuracy
-    accuracy = tf.reduce_mean(tf.cast(correct_prediction, "float"))
-    print("Accuracy:", accuracy.eval({X: test_inputs, Y: test_labels}))
-    global result
+    #accuracy = tf.reduce_mean(tf.cast(correct_prediction, "float"))
+    #print("Accuracy:", accuracy.eval({X: test_inputs, Y: test_labels}))
+    #global result
+
+    Accuracy = 0
+
+    pred_list = []
+
+    for i in range(test_iters):
+		next_input = utils.next_batch(test_inputs,i,batch_size)
+		next_label = utils.next_batch(test_labels,i,batch_size)
+		preds = sess.run([logits], feed_dict = {X: next_input})
+
+		Acc,predictions = utils.examine_faults(preds,next_label)
+
+		Accuracy += Acc
+
+		pred_list.append(predictions)
+
+		flat_list = []
+		for sublist in pred_list:
+			for item in sublist:
+				flat_list.append(item)
+
+    print(float(float(Accuracy)/float(test_iters)))
+
+    utils.figure_faults(test,data,flat_list)
 
 
 	
