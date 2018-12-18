@@ -175,6 +175,8 @@ def obtain_data_from_CoinMetrics():
 			#labels,l = next_prev_labeling(price)
 			labels,l = prev_window_labeling(price,window)
 			#utils.figure_price(price,asset,l,window)
+			if(asset=='btc'):
+				utils.save_prices(price,l,window)
 
 			#prev_len = len(vector_dict)
 
@@ -356,7 +358,7 @@ def save_data_as_timeseries(merged_dict,assets_number,window):
 	
 def main():
 
-	#coinmetrics_dict = vector_dict = obtain_data_from_CoinMetrics()
+	#vector_dict = obtain_data_from_CoinMetrics()
 
 	## writing vector dictionary into csv file
 	## sorted assets and timestamps for every asset
@@ -409,7 +411,6 @@ def main():
 	w.writerow(asset_cols)
 	w.writerow(asset_nums)
 
-	
 	time_dict = save_data_as_timeseries(merged_dict2,asset_nums,window)
 
 	### the final csv must have the form: asset date feature1 feature2 .... featureN label

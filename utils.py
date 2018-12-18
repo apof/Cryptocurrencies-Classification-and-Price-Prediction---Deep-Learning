@@ -2,8 +2,10 @@ import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib
+import csv
 
-def convert_data_to_arrays(data):
+
+def convert_data_to_arrays(data,flag):
 
     list_of_vectors = []
     list_of_labels = []
@@ -26,10 +28,16 @@ def convert_data_to_arrays(data):
         arr = arr.astype(np.float32)
         list_of_vectors.append(arr)
 
-        if(int(row[1][(len(row[1])-2)])==0):
-            label = [0,1]
+        if(flag==0):
+            if(int(row[1][(len(row[1])-2)])==0):
+                label = [0,1]
+            else:
+                label = [1,0]
         else:
-            label = [1,0]
+            if(int(row[1][(len(row[1])-2)])==0):
+                label = 0
+            else:
+                label = 1
 
         arr = np.array(label)
         arr = arr.astype(np.float32)
@@ -88,3 +96,97 @@ def figure_price(price,asset,label,window):
     loc = np.arange(0,max(label),max(label)/float(len(c)))
     cb.set_ticks(loc)
     cb.set_ticklabels(c)
+
+def save_prices(price,l,window):
+    x = []
+    y = []
+    
+    if(window==0):
+        for i in range(1,(len(price)-1)):
+            x.append(str(price[i][0]))
+            y.append(str(price[i][1]))
+    else:
+        for i in range(window,(len(price))):
+            x.append(str(price[i][0]))
+            y.append(str(price[i][1]))
+
+
+    w = csv.writer(open("../Datasets/btc_prices.csv", "w"))
+    w.writerow(['date','price','label'])
+    for i in range(len(l)):
+        dat = [str(x[i]),str(y[i]),str(l[i])]
+        w.writerow(dat)
+
+
+def examine_faults(preds,next_label):
+
+    Accuracy = 0
+
+    l = []
+
+    for i in range(len(preds[0])):
+        lb1 = 0
+        if(preds[0][i][0] > preds[0][i][1]):
+            lb1 = 1
+        lb2 = 0
+        if(next_label[i][0] > next_label[i][1]):
+            lb2 = 1
+        if(lb1==lb2):
+            Accuracy = Accuracy + 1
+            l.append(1)
+        else:
+            l.append(0)
+
+    return float(float(Accuracy)/float(len(next_label))),l
+
+
+def figure_faults(test,data,preds):
+
+    print(len(data))
+    print(len(test))
+    print(len(preds))
+
+    l= []
+
+    test_dict = {}
+    data_dict = {}
+
+    for row in test.iterrows():
+        test_dict[str(row[1][0]),str(row[1][1])] = 1
+
+    for row in data.iterrows():
+        data_dict[str(row[1][0]),str(row[1][1])] = row[1][(len(row[1])-2)]
+
+    index = 0
+    
+    for key in sorted(data_dict.keys()):
+        v = test_dict.get(key)
+        if(v!=None):
+            if(preds[index]==1):
+                l.append(data_dict[key])
+            else:
+                l.append(2)
+            index += 1
+        else:
+            l.append(data_dict[key])
+
+    data2 = pd.read_csv("../Datasets/btc_prices.csv")
+
+    x = []
+    for i in range(len(l)):
+        x.append(str(i))
+
+    c = np.array(['red','green','blue'])
+            
+    fig = plt.figure(figsize=(8,8))
+    plt.scatter(x, l, c=l, cmap=matplotlib.colors.ListedColormap(c))
+    fig.savefig('Plots/' +'preds_plot.png')
+
+    cb = plt.colorbar()
+    loc = np.arange(0,max(l),max(l)/float(len(c)))
+    cb.set_ticks(loc)
+    cb.set_ticklabels(c)
+
+
+        
+
