@@ -7,30 +7,42 @@ import numpy as np
 import utils
 from sklearn.metrics import f1_score, accuracy_score, recall_score, precision_score
 
-DATA_DIR = "../Datasets/Final_Data/normalized_all_vectors_merged_timeseries.csv"
+DATA_DIR = "../Datasets/normalized_all_vectors_merged_timeseries.csv"
 
-epochs = 500
+learning_rate = 0.001
+epochs = 10
 n_classes = 1
-n_units = 300
-input_length = 4
+n_units =512
+number_of_layers = 3
+input_length = 10
 number_of_sequences = 18
-batch_size = 64
+batch_size = 32
+num_layers = 5
+drop_prob = 0.4
 
 xplaceholder= tf.placeholder('float',[None,input_length,number_of_sequences])
 yplaceholder = tf.placeholder('float')
 
 def recurrent_neural_network_model():
-    layer ={ 'weights': tf.Variable(tf.random_normal([n_units, n_classes])),'bias': tf.Variable(tf.random_normal([n_classes]))}
-    x = tf.unstack(xplaceholder,input_length,axis=1)
-    lstm_cell = rnn.BasicLSTMCell(n_units)
-    outputs, states = rnn.static_rnn(lstm_cell, x, dtype=tf.float32)
-    output = tf.matmul(outputs[-1], layer['weights']) + layer['bias']
-    return output
+
+	x = tf.unstack(xplaceholder,input_length,axis=1)
+	layer ={ 'weights': tf.Variable(tf.random_normal([n_units, n_classes])),'bias': tf.Variable(tf.random_normal([n_classes]))}
+	
+
+	lstm_cells = []
+	for _ in range(num_layers):
+		cell = tf.nn.rnn_cell.LSTMCell(n_units) 
+		cell = tf.nn.rnn_cell.DropoutWrapper(cell, output_keep_prob=1-drop_prob)
+		lstm_cells.append(cell)
+
+	lstm_layers = rnn.MultiRNNCell(lstm_cells)
+	outputs, states = tf.nn.static_rnn(lstm_layers, x, dtype=tf.float32)
+	return tf.matmul(outputs[-1], layer['weights']) + layer['bias']
 
 logit = recurrent_neural_network_model()
 logit = tf.reshape(logit, [-1])
 cost = tf.reduce_mean(tf.nn.sigmoid_cross_entropy_with_logits(logits=logit, labels=yplaceholder))
-optimizer = tf.train.AdamOptimizer().minimize(cost)
+optimizer = tf.train.RMSPropOptimizer(learning_rate=learning_rate).minimize(cost)
 
 init = tf.global_variables_initializer()
 
