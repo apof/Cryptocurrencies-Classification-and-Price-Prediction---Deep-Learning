@@ -5,10 +5,11 @@ import matplotlib
 import csv
 from datetime import datetime
 import time
+import math
 
 
 
-def convert_data_to_arrays(data,flag):
+def convert_data_to_arrays(data,flag,split):
 
     list_of_vectors = []
     list_of_labels = []
@@ -24,7 +25,12 @@ def convert_data_to_arrays(data,flag):
 
         vector = []
 
-        for i in range(2,(len(row[1])-2)):
+        if(split == 1):
+            wind = 2
+        else:
+            wind = 1
+
+        for i in range(2,(len(row[1])-wind)):
             vector.append(row[1][i])
 
         arr = np.array(vector)
@@ -46,15 +52,16 @@ def convert_data_to_arrays(data,flag):
         arr = arr.astype(np.float32)
         list_of_labels.append(arr)
 
-    feature_num = len(row[1])-4
+    feature_num = len(row[1])-3
 
     return np.array(list_of_vectors),np.array(list_of_labels), feature_num
 
-def load_dataset(dir_name):
-	
-	data = pd.read_csv(dir_name, sep=",")
-	suffled_data = data.sample(frac=1)
-	return data
+def load_dataset(dir_name,suff):
+
+    data = pd.read_csv(dir_name, sep=",")
+    if(suff==1):
+        suffled_data = data.sample(frac=1)
+    return data
 
 
 def smash_train_test(df):
@@ -66,6 +73,14 @@ def smash_train_test(df):
 	test = df[~msk]
 
 	return train,test
+
+def smash_data_for_timeseries(inputs,labels):
+
+    train_num = int(math.floor(0.80*len(inputs)))
+
+    return inputs[0:train_num],labels[0:train_num],inputs[train_num:len(inputs)],labels[train_num:len(inputs)]
+
+
 
 
 def next_batch(data, num_of_batch,batch_size):
@@ -171,7 +186,7 @@ def figure_faults(test,data,preds):
             x.append(k)
 
     #black for training data 
-    #blue for wrong prediction
+    #red for wrong prediction
     #yellow for right prediction
     c = np.array(['black','black','red','yellow'])
             
@@ -183,6 +198,48 @@ def figure_faults(test,data,preds):
     loc = np.arange(0,max(l),max(l)/float(len(c)))
     cb.set_ticks(loc)
     cb.set_ticklabels(c)
+
+def figure_faults_timeseries(preds):
+
+    prices = []
+    time = []
+    data2 = pd.read_csv("../Datasets/btc_prices.csv")
+    for row in data2.iterrows():
+        prices.append(row[1][1])
+        time.append(row[1][0])
+
+    labels = []
+    index = 0
+
+    training = len(prices) - len(preds)
+    train_list = []
+    for i in range(0,training):
+        train_list.append(2)
+
+    preds_list = []
+    for i in range(0,len(preds)):
+        preds_list.append(preds[i])
+
+    labels = train_list + preds_list
+
+
+    #black for training data 
+    #red for wrong prediction
+    #yellow for right prediction
+    c = np.array(['red','yellow','black'])
+            
+    fig = plt.figure(figsize=(8,8))
+    plt.scatter(time, prices, c=labels, cmap=matplotlib.colors.ListedColormap(c))
+    fig.savefig('Plots/' +'preds_plot.png')
+
+    cb = plt.colorbar()
+    loc = np.arange(0,max(labels),max(labels)/float(len(c)))
+    cb.set_ticks(loc)
+    cb.set_ticklabels(c)
+
+
+
+
 
 
         
