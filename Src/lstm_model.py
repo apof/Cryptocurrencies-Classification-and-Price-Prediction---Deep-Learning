@@ -38,22 +38,9 @@ def multilayer_rnn_model():
 	lstm_layers = rnn.MultiRNNCell(lstm_cells)
 	outputs, states = tf.nn.static_rnn(lstm_layers, x, dtype=tf.float32)
 	return tf.matmul(outputs[-1], layer['weights']) + layer['bias']
-
-def bidirectional_rnn_model():
-
-	x = tf.unstack(xplaceholder,input_length,axis=1)
-	layer ={ 'weights': tf.Variable(tf.random_normal([n_units*2, n_classes])),'bias': tf.Variable(tf.random_normal([n_classes]))}
-
-	cell1 = tf.nn.rnn_cell.LSTMCell(n_units) 
-	cell2 = tf.nn.rnn_cell.LSTMCell(n_units) 
-	 
-	outputs, _, _ = tf.nn.static_bidirectional_rnn(cell1,cell2,x, dtype=tf.float32)
-	return tf.matmul(outputs[-1], layer['weights']) + layer['bias']
-
     
 
-#logit = multilayer_rnn_model()
-logit = bidirectional_rnn_model()
+logit = multilayer_rnn_model()
 logit = tf.reshape(logit, [-1])
 cost = tf.reduce_mean(tf.nn.sigmoid_cross_entropy_with_logits(logits=logit, labels=yplaceholder))
 optimizer = tf.train.GradientDescentOptimizer(learning_rate=learning_rate).minimize(cost)
@@ -111,7 +98,6 @@ with tf.Session() as sess:
 
 	test_inputs = test_inputs.reshape((-1,input_length,number_of_sequences))
 	predictions = correct_preds.eval({xplaceholder: np.array(test_inputs), yplaceholder: np.array(test_labels)})
-	
 
 	utils.figure_faults_timeseries(predictions)
 
