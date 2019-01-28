@@ -5,18 +5,18 @@ import tensorflow as tf
 import numpy as np
 import utils
 
-DATA_DIR = "../Datasets/Final_Data//normalized_all_vectors_merged_timeseries_btc_only.csv"
+DATA_DIR = "../Datasets/Final_Data/normalized_all_vectors_merged_timeseries(4).csv"
 
 # Parameters
-learning_rate = 0.001
+learning_rate = 0.0001
 training_epochs = 400
 batch_size = 32
 display_step = 100
 
 # Network Parameters
-n_hidden_1 = 128 # 1st layer number of neurons
-n_hidden_2 = 256 # 2nd layer number of neurons
-n_hidden_3 = 128 # 3rd layer number of neurons
+n_hidden_1 = 64 # 1st layer number of neurons
+n_hidden_2 = 128 # 2nd layer number of neurons
+n_hidden_3 = 32 # 3rd layer number of neurons
 num_input = 18*4 # input vector size
 num_classes = 2 # 2 classes good-bad
 
@@ -66,13 +66,18 @@ init = tf.global_variables_initializer()
 
 
 print("Loading data..")
-	
-data = utils.load_dataset(DATA_DIR)
 
-train,test = utils.smash_train_test(data)
+train_mode = 1
 
-train_inputs,train_labels,feature_num = utils.convert_data_to_arrays(train,0)
-test_inputs,test_labels,feature_num = utils.convert_data_to_arrays(test,0)
+if(train_mode==0):
+    data = utils.load_dataset(DATA_DIR,0)
+    inputs,labels,feature_num = utils.convert_data_to_arrays(data,0,0)
+    train_inputs,train_labels,test_inputs,test_labels = utils.smash_data_for_timeseries(inputs,labels)
+else:
+    data = utils.load_dataset(DATA_DIR,1)
+    train,test = utils.smash_train_test(data)
+    train_inputs,train_labels,feature_num = utils.convert_data_to_arrays(train,0,1)
+    test_inputs,test_labels,feature_num = utils.convert_data_to_arrays(test,0,1)
 
 if(len(train_labels) % batch_size == 0):
     train_iters = len(train_labels) / batch_size
@@ -114,7 +119,7 @@ with tf.Session() as sess:
 
     print("Testing starting..")
 
-    test_mode = 1
+    test_mode = 0
 
     #calculate accuraacy
     #test_mode=0: just calculate the accuracy of the model
@@ -150,7 +155,10 @@ with tf.Session() as sess:
 
         print(float(float(Accuracy)/float(test_iters)))
 
-        utils.figure_faults(test,data,flat_list)
+        if(train_mode==0):
+            utils.figure_faults_timeseries(flat_list)
+        else:
+            utils.figure_faults(test,data,flat_list)
 
 
 	
