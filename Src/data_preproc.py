@@ -190,7 +190,7 @@ def main():
 	col_names_new = ['asset','date'] + col_names_merge
 
 	#create col_names for timeseries
-	window = 4
+	window = 10
 	col_names_timeseries = []
 	for i in range(0,window):
 		for x in col_names_merge[0:-1]:

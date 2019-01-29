@@ -6,6 +6,7 @@ import csv
 from datetime import datetime
 import time
 import math
+import numpy
 from sklearn.metrics import f1_score, accuracy_score, recall_score, precision_score, confusion_matrix
 
 def convert_data_to_arrays(data,flag,split):
@@ -75,7 +76,7 @@ def smash_train_test(df):
 
 def smash_data_for_timeseries(inputs,labels):
 
-    train_num = int(math.floor(0.80*len(inputs)))
+    train_num = int(math.floor(0.5*len(inputs)))
 
     return inputs[0:train_num],labels[0:train_num],inputs[train_num:len(inputs)],labels[train_num:len(inputs)]
 
@@ -104,7 +105,7 @@ def figure_and_save_price(price,asset,label,window):
             x.append(price[i][0])
             y.append(price[i][1])
     
-    w = csv.writer(open("../Datasets/btc_prices.csv", "w"))
+    w = csv.writer(open("../Datasets/" + asset + "_prices.csv", "w"))
     w.writerow(['date','price'])
     for i in range(len(x)):
         dat = [str(x[i]),str(y[i])]
@@ -198,11 +199,11 @@ def figure_faults(test,data,preds):
     cb.set_ticks(loc)
     cb.set_ticklabels(c)
 
-def figure_faults_timeseries(preds):
+def figure_faults_timeseries(preds,asset):
 
     prices = []
     time = []
-    data2 = pd.read_csv("../Datasets/btc_prices.csv")
+    data2 = pd.read_csv("../Datasets/" + asset + "_prices.csv")
     for row in data2.iterrows():
         prices.append(row[1][1])
         time.append(row[1][0])
@@ -229,7 +230,7 @@ def figure_faults_timeseries(preds):
             
     fig = plt.figure(figsize=(8,8))
     plt.scatter(time, prices, c=labels, cmap=matplotlib.colors.ListedColormap(c))
-    fig.savefig('Plots/' +'preds_plot.png')
+    fig.savefig('Plots/' + asset + '_preds_plot.png')
 
     cb = plt.colorbar()
     loc = np.arange(0,max(labels),max(labels)/float(len(c)))
@@ -244,6 +245,11 @@ def calculate_metrics(y_pred,y_true):
     print "f1_score", f1_score(y_true, y_pred)
     print "confusion_matrix"
     print confusion_matrix(y_true, y_pred)
+
+def unison_shuffled_copies(a, b):
+    assert len(a) == len(b)
+    p = numpy.random.permutation(len(a))
+    return a[p], b[p]
 
 
         

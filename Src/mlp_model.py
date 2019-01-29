@@ -10,7 +10,7 @@ DATA_DIR = "../Datasets/Final_Data/normalized_all_vectors_merged_timeseries(4)_b
 # Parameters
 learning_rate = 0.0001
 training_epochs = 400
-batch_size = 32
+batch_size = 18
 display_step = 100
 
 # Network Parameters
@@ -59,7 +59,7 @@ logits = neural_net(X,weights,biases)
 
 # Define loss and optimizer
 loss_op = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(logits=logits, labels=Y))
-optimizer = tf.train.AdamOptimizer(learning_rate=learning_rate).minimize(loss_op)
+optimizer = tf.train.GradientDescentOptimizer(learning_rate=learning_rate).minimize(loss_op)
 
 # Initialize the variables (i.e. assign their default value)
 init = tf.global_variables_initializer()
@@ -79,6 +79,8 @@ else:
     train_inputs,train_labels,feature_num = utils.convert_data_to_arrays(train,0,1)
     test_inputs,test_labels,feature_num = utils.convert_data_to_arrays(test,0,1)
 
+test_asset = 'btc'
+
 if(len(train_labels) % batch_size == 0):
     train_iters = len(train_labels) / batch_size
 else:
@@ -96,6 +98,8 @@ with tf.Session() as sess:
     sess.run(init)
 
     for epoch in range(training_epochs):
+
+        train_inputs,train_labels =  utils.unison_shuffled_copies(train_inputs,train_labels)
         
         avg_cost = 0.0
 
@@ -160,7 +164,7 @@ with tf.Session() as sess:
         print(float(float(Accuracy)/float(test_iters)))
 
         if(train_mode==0):
-            utils.figure_faults_timeseries(flat_list)
+            utils.figure_faults_timeseries(flat_list,test_asset)
         else:
             utils.figure_faults(test,data,flat_list)
 
