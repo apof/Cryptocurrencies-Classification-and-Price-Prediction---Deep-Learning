@@ -6,8 +6,7 @@ import csv
 from datetime import datetime
 import time
 import math
-
-
+from sklearn.metrics import f1_score, accuracy_score, recall_score, precision_score, confusion_matrix
 
 def convert_data_to_arrays(data,flag,split):
 
@@ -237,9 +236,14 @@ def figure_faults_timeseries(preds):
     cb.set_ticks(loc)
     cb.set_ticklabels(c)
 
+def calculate_metrics(y_pred,y_true):
 
-
-
+    print "Accuracy", accuracy_score(y_true, y_pred)
+    print "Precision", precision_score(y_true, y_pred)
+    print "Recall", recall_score(y_true, y_pred)
+    print "f1_score", f1_score(y_true, y_pred)
+    print "confusion_matrix"
+    print confusion_matrix(y_true, y_pred)
 
 
         

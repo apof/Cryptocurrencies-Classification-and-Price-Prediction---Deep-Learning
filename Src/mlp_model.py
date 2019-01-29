@@ -5,7 +5,7 @@ import tensorflow as tf
 import numpy as np
 import utils
 
-DATA_DIR = "../Datasets/Final_Data/normalized_all_vectors_merged_timeseries(4).csv"
+DATA_DIR = "../Datasets/Final_Data/normalized_all_vectors_merged_timeseries(4)_btc_only.csv"
 
 # Parameters
 learning_rate = 0.0001
@@ -67,7 +67,7 @@ init = tf.global_variables_initializer()
 
 print("Loading data..")
 
-train_mode = 1
+train_mode = 0
 
 if(train_mode==0):
     data = utils.load_dataset(DATA_DIR,0)
@@ -119,18 +119,22 @@ with tf.Session() as sess:
 
     print("Testing starting..")
 
-    test_mode = 0
+    test_mode = 1
 
     #calculate accuraacy
-    #test_mode=0: just calculate the accuracy of the model
+    #test_mode=0: just the accuracy/f1/recall/precision/confusion matrix of the model
     #test_mode=1: calculate the accuracy, take the exact prediction and plot the faults (designed only for one asset testing)
 
     if(test_mode==0):
 
         correct_prediction = tf.equal(tf.argmax(logits, 1), tf.argmax(Y, 1))
         accuracy = tf.reduce_mean(tf.cast(correct_prediction, "float"))
-        print("Accuracy:", accuracy.eval({X: test_inputs, Y: test_labels}))
-        global result
+        print("Tf-Accuracy:", accuracy.eval({X: test_inputs, Y: test_labels}))
+
+        y_p = tf.argmax(logits, 1)
+        preds = sess.run([y_p], feed_dict = {X: test_inputs})
+        preds = np.array(preds)[0]
+        utils.calculate_metrics(preds,np.argmax(test_labels,1))
 
     else:
 
