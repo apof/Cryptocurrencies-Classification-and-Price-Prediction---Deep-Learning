@@ -8,50 +8,48 @@ import utils
 DATA_DIR = "../Datasets/Final_Data/normalized_all_vectors_merged_timeseries(4)_btc_only.csv"
 
 # Parameters
-learning_rate = 0.0001
-training_epochs = 400
+learning_rate = 0.001
+training_epochs = 1500
 batch_size = 18
 display_step = 100
 
 # Network Parameters
-n_hidden_1 = 64 # 1st layer number of neurons
-n_hidden_2 = 128 # 2nd layer number of neurons
-n_hidden_3 = 32 # 3rd layer number of neurons
+n_hidden_1 = 128 # 1st layer number of neurons
+n_hidden_2 = 32 # 2nd layer number of neurons
 num_input = 18*4 # input vector size
 num_classes = 2 # 2 classes good-bad
 
 # tf Graph input
 X = tf.placeholder("float", [None, num_input])
 Y = tf.placeholder("float", [None, num_classes])
+keep_prob = tf.placeholder(tf.float32)
+
 
 # Store layers weight & bias
 weights = {
     'h1': tf.Variable(tf.random_normal([num_input, n_hidden_1])),
     'h2': tf.Variable(tf.random_normal([n_hidden_1, n_hidden_2])),
-    'h3': tf.Variable(tf.random_normal([n_hidden_2, n_hidden_3])),
-    'out': tf.Variable(tf.random_normal([n_hidden_3, num_classes]))
+    'out': tf.Variable(tf.random_normal([n_hidden_2, num_classes]))
 }
 biases = {
     'b1': tf.Variable(tf.random_normal([n_hidden_1])),
     'b2': tf.Variable(tf.random_normal([n_hidden_2])),
-    'b3': tf.Variable(tf.random_normal([n_hidden_3])),
     'out': tf.Variable(tf.random_normal([num_classes]))
 }
 
 # Create model
 def neural_net(x,weights, biases):
-    # Hidden fully connected layer with 16 neurons
-    layer_1 = tf.add(tf.matmul(x, weights['h1']), biases['b1'])
-    layer_1 = tf.nn.relu(layer_1)
-    # Hidden fully connected layer with 16 neurons
-    layer_2 = tf.add(tf.matmul(layer_1, weights['h2']), biases['b2'])
-    layer_2 = tf.nn.relu(layer_2)
-    # Hidden fully connected layer with 16 neurons
-    layer_3 = tf.add(tf.matmul(layer_2, weights['h3']), biases['b3'])
-    layer_3 = tf.nn.relu(layer_3)    
+	layer_1 = tf.add(tf.matmul(x, weights['h1']), biases['b1'])
+	layer_1 = tf.nn.relu(layer_1)
+	drop_out1 = tf.nn.dropout(layer_1, keep_prob)  # DROP-OUT here
+
+	layer_2 = tf.add(tf.matmul(drop_out1, weights['h2']), biases['b2'])
+	layer_2 = tf.nn.relu(layer_2)
+	drop_out2 = tf.nn.dropout(layer_2, keep_prob)  # DROP-OUT here
+
     # Output fully connected layer with a neuron for each class
-    out_layer = tf.matmul(layer_3, weights['out']) + biases['out']
-    return out_layer
+	out_layer = tf.matmul(drop_out2, weights['out']) + biases['out']
+	return out_layer
 
 
 # Construct model
@@ -59,7 +57,7 @@ logits = neural_net(X,weights,biases)
 
 # Define loss and optimizer
 loss_op = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(logits=logits, labels=Y))
-optimizer = tf.train.GradientDescentOptimizer(learning_rate=learning_rate).minimize(loss_op)
+optimizer = tf.train.AdamOptimizer(learning_rate=learning_rate).minimize(loss_op)
 
 # Initialize the variables (i.e. assign their default value)
 init = tf.global_variables_initializer()
@@ -67,17 +65,10 @@ init = tf.global_variables_initializer()
 
 print("Loading data..")
 
-train_mode = 0
 
-if(train_mode==0):
-    data = utils.load_dataset(DATA_DIR,0)
-    inputs,labels,feature_num = utils.convert_data_to_arrays(data,0,0)
-    train_inputs,train_labels,test_inputs,test_labels = utils.smash_data_for_timeseries(inputs,labels)
-else:
-    data = utils.load_dataset(DATA_DIR,1)
-    train,test = utils.smash_train_test(data)
-    train_inputs,train_labels,feature_num = utils.convert_data_to_arrays(train,0,1)
-    test_inputs,test_labels,feature_num = utils.convert_data_to_arrays(test,0,1)
+data = utils.load_dataset(DATA_DIR)
+inputs,labels,feature_num = utils.convert_data_to_arrays(data,0)
+train_inputs,train_labels,test_inputs,test_labels = utils.smash_data_for_timeseries(inputs,labels)
 
 test_asset = 'btc'
 
@@ -110,8 +101,7 @@ with tf.Session() as sess:
             batch_y = utils.next_batch(train_labels,i,batch_size)
 
             # Run optimization op (backprop) and cost op (to get loss value)
-            _, c = sess.run([optimizer, loss_op], feed_dict={X: batch_x,
-                                                         Y: batch_y})
+            _, c = sess.run([optimizer, loss_op], feed_dict={X: batch_x,Y: batch_y,keep_prob : 0.5})
             # Compute average loss
             avg_cost += c / train_iters
         # Display logs per epoch step
@@ -123,22 +113,27 @@ with tf.Session() as sess:
 
     print("Testing starting..")
 
-    test_mode = 1
+    test_mode = 0
 
     #calculate accuraacy
     #test_mode=0: just the accuracy/f1/recall/precision/confusion matrix of the model
     #test_mode=1: calculate the accuracy, take the exact prediction and plot the faults (designed only for one asset testing)
 
+
     if(test_mode==0):
 
         correct_prediction = tf.equal(tf.argmax(logits, 1), tf.argmax(Y, 1))
         accuracy = tf.reduce_mean(tf.cast(correct_prediction, "float"))
-        print("Tf-Accuracy:", accuracy.eval({X: test_inputs, Y: test_labels}))
+        print("Tf-Accuracy:", accuracy.eval({X: test_inputs, Y: test_labels,keep_prob : 1.0}))
 
         y_p = tf.argmax(logits, 1)
-        preds = sess.run([y_p], feed_dict = {X: test_inputs})
+        preds = sess.run([y_p], feed_dict = {X: test_inputs,keep_prob : 1.0})
         preds = np.array(preds)[0]
         utils.calculate_metrics(preds,np.argmax(test_labels,1))
+
+        predictions = correct_prediction.eval({X: test_inputs, Y: test_labels,keep_prob : 1.0})
+        utils.figure_faults_timeseries(predictions,test_asset)
+
 
     else:
 
@@ -148,7 +143,7 @@ with tf.Session() as sess:
         for i in range(test_iters):
             next_input = utils.next_batch(test_inputs,i,batch_size)
             next_label = utils.next_batch(test_labels,i,batch_size)
-            preds = sess.run([logits], feed_dict = {X: next_input})
+            preds = sess.run([logits], feed_dict = {X: next_input,keep_prob : 1.0})
 
             Acc,predictions = utils.examine_faults(preds,next_label)
 
@@ -163,10 +158,7 @@ with tf.Session() as sess:
 
         print(float(float(Accuracy)/float(test_iters)))
 
-        if(train_mode==0):
-            utils.figure_faults_timeseries(flat_list,test_asset)
-        else:
-            utils.figure_faults(test,data,flat_list)
+        utils.figure_faults_timeseries(flat_list,test_asset)
 
 
 	

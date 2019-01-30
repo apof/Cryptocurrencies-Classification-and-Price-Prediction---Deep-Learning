@@ -9,7 +9,7 @@ import math
 import numpy
 from sklearn.metrics import f1_score, accuracy_score, recall_score, precision_score, confusion_matrix
 
-def convert_data_to_arrays(data,flag,split):
+def convert_data_to_arrays(data,flag):
 
     list_of_vectors = []
     list_of_labels = []
@@ -20,17 +20,12 @@ def convert_data_to_arrays(data,flag,split):
         #row[0] is record id 1,2,3...
         #row[1][0] contains the asset
         #row[1][1] contains the date
-        #row[2][0-(last-2)] contains all features
+        #row[1][0-(last-2)] contains all features
         #row[1][last-1] contains the label
 
         vector = []
 
-        if(split == 1):
-            wind = 2
-        else:
-            wind = 1
-
-        for i in range(2,(len(row[1])-wind)):
+        for i in range(2,(len(row[1])-1)):
             vector.append(row[1][i])
 
         arr = np.array(vector)
@@ -38,12 +33,12 @@ def convert_data_to_arrays(data,flag,split):
         list_of_vectors.append(arr)
 
         if(flag==0):
-            if(int(row[1][(len(row[1])-2)])==0):
+            if(int(row[1][(len(row[1])-1)])==0):
                 label = [0,1]
             else:
                 label = [1,0]
         else:
-            if(int(row[1][(len(row[1])-2)])==0):
+            if(int(row[1][(len(row[1])-1)])==0):
                 label = 0
             else:
                 label = 1
@@ -56,11 +51,10 @@ def convert_data_to_arrays(data,flag,split):
 
     return np.array(list_of_vectors),np.array(list_of_labels), feature_num
 
-def load_dataset(dir_name,suff):
+def load_dataset(dir_name):
 
     data = pd.read_csv(dir_name, sep=",")
-    if(suff==1):
-        suffled_data = data.sample(frac=1)
+    #suffled_data = data.sample(frac=1)
     return data
 
 
@@ -76,11 +70,8 @@ def smash_train_test(df):
 
 def smash_data_for_timeseries(inputs,labels):
 
-    train_num = int(math.floor(0.5*len(inputs)))
-
+    train_num = int(math.floor(0.8*len(inputs)))
     return inputs[0:train_num],labels[0:train_num],inputs[train_num:len(inputs)],labels[train_num:len(inputs)]
-
-
 
 
 def next_batch(data, num_of_batch,batch_size):
