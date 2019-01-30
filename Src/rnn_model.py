@@ -15,9 +15,9 @@ learning_rate = 0.001
 epochs = 200
 n_classes = 1
 n_units = 128
-input_length = 4
+input_length = 10
 number_of_sequences = 18
-batch_size = 18
+batch_size = 256
 num_layers = 1
 drop_prob = 0.5
 
@@ -55,7 +55,7 @@ print("Loading data..")
 # train mode=0 train and test for btc --- =1 train with btc and 1,2 other coins -> test for a random coin
 train_mode = 0
 
-if(train_mode==0):
+if(train_mode==1):
 	data = utils.load_dataset(DATA_DIR)
 	inputs,labels,feature_num = utils.convert_data_to_arrays(data,1)
 	train_inputs,train_labels,test_inputs,test_labels = utils.smash_data_for_timeseries(inputs,labels)
