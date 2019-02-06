@@ -94,7 +94,7 @@ def data_scaling(df,scaling_method):
 	elif(scaling_method == 'normalization'):
 		res = pd.DataFrame(preprocessing.MinMaxScaler().fit_transform(x),columns=df.columns, index=df.index)
 
-	return res.transpose()
+	return res
 
 
 def main():
@@ -103,9 +103,9 @@ def main():
 	#plot_features(data)
 
 	btc_data = get_bitcoin_batch(data)
-	btc_scaled_data = data_scaling(btc_data,'normalization')
+	btc_scaled_data = data_scaling(btc_data,'standarization')
 
-	print btc_scaled_data.transpose()
+	print btc_scaled_data
 
 
 if __name__ == "__main__":
