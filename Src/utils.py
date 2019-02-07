@@ -8,6 +8,7 @@ import time
 import math
 import numpy
 from sklearn.metrics import f1_score, accuracy_score, recall_score, precision_score, confusion_matrix
+import tensorflow as tf
 
 def convert_data_to_arrays(data,flag):
 
@@ -70,7 +71,7 @@ def smash_train_test(df):
 
 def smash_data_for_timeseries(inputs,labels):
 
-    train_num = int(math.floor(0.85*len(inputs)))
+    train_num = int(math.floor(0.75*len(inputs)))
     return inputs[0:train_num],labels[0:train_num],inputs[train_num:len(inputs)],labels[train_num:len(inputs)]
 
 
@@ -104,7 +105,7 @@ def figure_and_save_price(price,asset,label,window):
             
     fig = plt.figure(figsize=(8,8))
     plt.scatter(x, y, c=label, cmap=matplotlib.colors.ListedColormap(c))
-    fig.savefig('Plots/' + asset + '_plot_labels.png')
+    fig.savefig('Plots_Results/' + asset + '_plot_labels.png')
 
     cb = plt.colorbar()
     loc = np.arange(0,max(label),max(label)/float(len(c)))
@@ -221,7 +222,7 @@ def figure_faults_timeseries(preds,asset):
             
     fig = plt.figure(figsize=(8,8))
     plt.scatter(time, prices, c=labels, cmap=matplotlib.colors.ListedColormap(c))
-    fig.savefig('Plots/' + asset + '_preds_plot.png')
+    fig.savefig('Plots_Results/' + asset + '_preds_plot.png')
 
     cb = plt.colorbar()
     loc = np.arange(0,max(labels),max(labels)/float(len(c)))
@@ -242,6 +243,15 @@ def unison_shuffled_copies(a, b):
     p = numpy.random.permutation(len(a))
     return a[p], b[p]
 
+
+def get_variables_of_model(sess):
+
+    variables_names = [v.name for v in tf.trainable_variables()]
+    values = sess.run(variables_names)
+    for k, v in zip(variables_names, values):
+        print "Variable: ", k
+        print "Shape: ", v.shape
+        print v
 
         
 

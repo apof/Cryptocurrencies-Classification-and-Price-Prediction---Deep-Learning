@@ -9,13 +9,13 @@ DATA_DIR = "../Datasets/Final_Data/normalized_all_vectors_merged_timeseries(4)_b
 
 # Parameters
 learning_rate = 0.001
-training_epochs = 2000
-batch_size = 256
+training_epochs = 600
+batch_size = 32
 display_step = 100
 
 # Network Parameters
-n_hidden_1 = 64 # 1st layer number of neurons
-n_hidden_2 = 32 # 2nd layer number of neurons
+n_hidden_1 = 128 # 1st layer number of neurons
+n_hidden_2 = 64 # 2nd layer number of neurons
 num_input = 18*4 # input vector size
 num_classes = 2 # 2 classes good-bad
 
@@ -110,6 +110,7 @@ with tf.Session() as sess:
 
     print("Optimization Finished!")
 
+    utils.get_variables_of_model(sess)
 
     print("Testing starting..")
 
