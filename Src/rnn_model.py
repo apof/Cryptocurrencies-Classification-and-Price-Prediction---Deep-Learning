@@ -6,7 +6,7 @@ from tensorflow.contrib import rnn
 import numpy as np
 import utils
 
-DATA_DIR = "../Datasets/Final_Data/normalized_all_vectors_merged_timeseries(4)_btc_only.csv"
+DATA_DIR = "../Datasets/Final_Data/normalized_all_vectors_merged_timeseries(10)_btc_only.csv"
 TRAIN_DIR = "../Datasets/Final_Data/normalized_all_vectors_merged_timeseries(10)_btc_ltc_eth.csv"
 TEST_DIR = "../Datasets/Final_Data/normalized_all_vectors_merged_timeseries(10)_dash_only.csv"
 
@@ -17,12 +17,12 @@ n_classes = 1
 n_units = 128
 input_length = 10
 number_of_sequences = 18
-batch_size = 256
-num_layers = 1
+batch_size = 64
+num_layers = 2
 drop_prob = 0.5
 
 xplaceholder= tf.placeholder('float',[None,input_length,number_of_sequences])
-yplaceholder = tf.placeholder('float')
+yplaceholder = tf.placeholder('float',[None,n_classes])
 
 def multilayer_rnn_model(cell_flag):
 
@@ -43,8 +43,7 @@ def multilayer_rnn_model(cell_flag):
 	return tf.matmul(outputs[-1], layer['weights']) + layer['bias']
     
 
-logit = multilayer_rnn_model(0)
-logit = tf.reshape(logit, [-1])
+logit = multilayer_rnn_model(1)
 cost = tf.reduce_mean(tf.nn.sigmoid_cross_entropy_with_logits(logits=logit, labels=yplaceholder))
 optimizer = tf.train.RMSPropOptimizer(learning_rate=learning_rate).minimize(cost)
 
@@ -67,7 +66,7 @@ else:
 	_,_,test_inputs,test_labels = utils.smash_data_for_timeseries(test_inputs,test_labels)
 
 
-test_asset = 'btc'
+test_asset = 'dash'
 
 train_iters = 0
 if(len(train_labels) % batch_size == 0):
@@ -93,6 +92,7 @@ with tf.Session() as sess:
 			batch_y = utils.next_batch(train_labels,i,batch_size)
 
 			batch_x = batch_x.reshape((-1,input_length,number_of_sequences))
+			batch_y = batch_y.reshape((-1,n_classes))
 
 			_, c = sess.run([optimizer, cost], feed_dict={xplaceholder: batch_x, yplaceholder: batch_y})
 
@@ -109,6 +109,10 @@ with tf.Session() as sess:
 	accuracy = tf.reduce_mean(tf.cast(correct_preds, "float"))
 	test_inputs = test_inputs.reshape((-1,input_length,number_of_sequences))
 
+	t_labels = test_labels
+
+	test_labels = test_labels.reshape((-1,n_classes))
+
 
 	print("Tf-Accuracy: ",accuracy.eval({xplaceholder: test_inputs, yplaceholder: test_labels}))
 	predictions = correct_preds.eval({xplaceholder: test_inputs, yplaceholder: test_labels})
@@ -117,5 +121,5 @@ with tf.Session() as sess:
 	preds = sess.run([net_output], feed_dict = {xplaceholder: test_inputs})
 	preds = np.array(preds)[0]
 
-	utils.calculate_metrics(preds,test_labels)
+	utils.calculate_metrics(preds,t_labels)
 	
