@@ -11,23 +11,45 @@ TRAIN_DIR = "../Datasets/Final_Data/normalized_all_vectors_merged_timeseries(10)
 TEST_DIR = "../Datasets/Final_Data/normalized_all_vectors_merged_timeseries(10)_dash_only.csv"
 
 
+# RNN parametres
 learning_rate = 0.001
 epochs = 200
 n_classes = 1
 n_units = 128
 input_length = 10
 number_of_sequences = 18
-batch_size = 64
+batch_size = 256
 num_layers = 2
-drop_prob = 0.5
+drop_prob = 0.3
+
+# DNN parametres
+n_hidden_1 = 16
 
 xplaceholder= tf.placeholder('float',[None,input_length,number_of_sequences])
 yplaceholder = tf.placeholder('float',[None,n_classes])
 
+
+def dnn(lstm_output):
+
+	weights = {
+    'h1': tf.Variable(tf.random_normal([n_units, n_hidden_1])),
+    'out': tf.Variable(tf.random_normal([n_hidden_1, n_classes]))
+	}
+
+	biases = {
+    'b1': tf.Variable(tf.random_normal([n_hidden_1])),
+    'out': tf.Variable(tf.random_normal([n_classes]))
+	}
+
+	layer_1 = tf.add(tf.matmul(lstm_output, weights['h1']), biases['b1'])
+	out_layer = tf.matmul(layer_1, weights['out']) + biases['out']
+
+	return out_layer
+
+
 def multilayer_rnn_model(cell_flag):
 
 	x = tf.unstack(xplaceholder,input_length,axis=1)
-	layer ={ 'weights': tf.Variable(tf.random_normal([n_units, n_classes])),'bias': tf.Variable(tf.random_normal([n_classes]))}
 
 	lstm_cells = []
 	for _ in range(num_layers):
@@ -40,8 +62,8 @@ def multilayer_rnn_model(cell_flag):
 
 	lstm_layers = rnn.MultiRNNCell(lstm_cells)
 	outputs, states = tf.nn.static_rnn(lstm_layers, x, dtype=tf.float32)
-	return tf.matmul(outputs[-1], layer['weights']) + layer['bias']
-    
+
+	return dnn(outputs[-1])    
 
 logit = multilayer_rnn_model(1)
 cost = tf.reduce_mean(tf.nn.sigmoid_cross_entropy_with_logits(logits=logit, labels=yplaceholder))
@@ -52,7 +74,7 @@ init = tf.global_variables_initializer()
 print("Loading data..")
 
 # train mode=0 train and test for btc --- =1 train with btc and 1,2 other coins -> test for a random coin
-train_mode = 0
+train_mode = 1
 
 if(train_mode==1):
 	data = utils.load_dataset(DATA_DIR)
@@ -66,7 +88,7 @@ else:
 	_,_,test_inputs,test_labels = utils.smash_data_for_timeseries(test_inputs,test_labels)
 
 
-test_asset = 'dash'
+test_asset = 'btc'
 
 train_iters = 0
 if(len(train_labels) % batch_size == 0):
