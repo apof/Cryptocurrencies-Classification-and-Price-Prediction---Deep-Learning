@@ -10,20 +10,20 @@ DATA_DIR = "../Datasets/Final_Data/regression_data(10)_btc.csv"
 
 # RNN parametres
 learning_rate = 0.001
-epochs = 200
-output_neurons = 3
+epochs = 1000
+output_neurons = 6
 n_units = 128
 input_length = 3
-number_of_sequences = 5
-batch_size = 128
+number_of_sequences = 6
+batch_size = 64
 num_layers = 2
-drop_prob = 0.5
+drop_prob = 0.4
 
 # DNN parametres
 n_hidden_1 = 32
 
 xplaceholder= tf.placeholder('float',[None,input_length,number_of_sequences])
-yplaceholder = tf.placeholder('float',[None,input_length])
+yplaceholder = tf.placeholder('float',[None,number_of_sequences])
 
 
 def dnn(lstm_output):
@@ -72,16 +72,8 @@ print("Loading data..")
 
 
 data = utils.load_dataset(DATA_DIR)
-print data.shape
 inputs,labels,feature_num = utils.convert_data_to_arrays_regression(data)
-print inputs.shape
-print labels.shape
 train_inputs,train_labels,test_inputs,test_labels = utils.smash_data_for_timeseries(inputs,labels)
-
-print train_inputs.shape
-print train_labels.shape
-print test_inputs.shape
-print test_labels.shape
 
 test_asset = 'btc'
 
@@ -106,7 +98,7 @@ with tf.Session() as sess:
 			batch_y = utils.next_batch(train_labels,i,batch_size)
 
 			batch_x = batch_x.reshape((-1,input_length,number_of_sequences))
-			batch_y = batch_y.reshape((-1,input_length))
+			batch_y = batch_y.reshape((-1,number_of_sequences))
 
 			_, c = sess.run([optimizer, cost], feed_dict={xplaceholder: batch_x, yplaceholder: batch_y})
 
@@ -122,4 +114,26 @@ with tf.Session() as sess:
 	predictions = sess.run([logit], feed_dict = {xplaceholder: test_batch})
 
 	print('Total Mae for Test set is: ',utils.compute_error(test_labels,np.array(predictions)[0]))
+
+	preds = np.array(predictions)[0]
+
+	close_labels = []
+	close_preds = []
+	index_list = []
+	for i in range(0,len(preds)):
+		close_labels.append(test_labels[i][number_of_sequences-1])
+		close_preds.append(preds[i][number_of_sequences-1])
+		index_list.append(i)
+	
+	utils.print_preds(close_labels,close_preds,index_list)
+
+	close_labels = []
+	close_preds = []
+	index_list = []
+	for i in range(0,len(preds)):
+		close_labels.append(test_labels[i][number_of_sequences-1])
+		close_preds.append(preds[i][number_of_sequences-1])
+		index_list.append(i)
+	
+	utils.print_preds(close_labels,close_preds,index_list)
 	

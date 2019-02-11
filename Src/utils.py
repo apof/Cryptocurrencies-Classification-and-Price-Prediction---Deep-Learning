@@ -57,37 +57,29 @@ def convert_data_to_arrays(data,flag):
 
 def convert_data_to_arrays_regression(data):
 
-	print data
+    values = data.values
 
-	values = data.values
+    list_of_vectors = []
+    list_of_labels = []
+    window = 3
 
-	list_of_vectors = []
-	list_of_labels = []
-	window = 3
-
-	start = 0
-	end = window
+    start = 0
+    end = window
 	
-	while(end<len(data)):
-		v = values[start:end]
-		timeserie = []
-		labels = []
-		for i in range(0,len(v)):
-			timeserie.append(v[i][0:-1])
-			labels.append(v[i][-1])
-		flattened_vectors = [y for x in timeserie for y in x]
+    while(end<len(data)):
 
-		print flattened_vectors
-		print '-----'
-		print labels
+        v = values[start:end]
+        timeserie = []
+        for dat in v:
+            timeserie.append(dat)
+        flattened_vectors = [y for x in timeserie for y in x]
+        list_of_vectors.append(np.array(flattened_vectors))
 
-		list_of_vectors.append(np.array(flattened_vectors))
-		list_of_labels.append(np.array(labels))
+        list_of_labels.append(np.array(values[end]))
+        start += 1
+        end += 1
 
-		start += 1
-		end += 1
-
-	return np.array(list_of_vectors),np.array(list_of_labels), len(list_of_vectors)
+    return np.array(list_of_vectors),np.array(list_of_labels), len(list_of_vectors)
 
 def load_dataset(dir_name):
 
@@ -108,7 +100,7 @@ def smash_train_test(df):
 
 def smash_data_for_timeseries(inputs,labels):
 
-    train_num = int(math.floor(0.75*len(inputs)))
+    train_num = int(math.floor(0.9*len(inputs)))
     return inputs[0:train_num],labels[0:train_num],inputs[train_num:len(inputs)],labels[train_num:len(inputs)]
 
 def split_test_and_valid(inputs,labels):
@@ -308,5 +300,14 @@ def plot_epoch_loss(epoch_index_list,epoch_loss_list,validation_loss_list):
 def compute_error(labels,preds):
     assert len(labels) == len(preds)
     return mean_absolute_error(labels,preds)
+
+def print_preds(close_labels,close_preds,index_list):
+
+    plt.title('Prediction vd True Prices')
+    plt.plot(index_list, close_preds,label = "Predictions")
+    plt.plot(index_list, close_labels,label = "Prices")
+    plt.savefig('Plots_Results/Regression_results/'+'plot_'+str(os.getpid())+'.png')
+
+
 
 

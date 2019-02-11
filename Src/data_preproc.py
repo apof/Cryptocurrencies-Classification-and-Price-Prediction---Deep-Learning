@@ -186,6 +186,8 @@ def get_bitcoin_batch(data):
 
 	columnsTitles=["Open","High","Close","Volume","MarketCap","Low"]
 	btc_frame=btc_frame.reindex(columns=columnsTitles)
+	print btc_frame["Low"].mean()
+	print btc_frame["Low"].std()
 
 	return btc_frame
 
@@ -302,8 +304,6 @@ def main():
 		data = utils.load_dataset("../Datasets/Data_to_merge/crypto_ohlcv.csv")
 		btc_data = get_bitcoin_batch(data)
 		btc_scaled_data = data_scaling(btc_data,'standarization')
-
-		print btc_scaled_data
 
 		write_data(btc_scaled_data)
 
