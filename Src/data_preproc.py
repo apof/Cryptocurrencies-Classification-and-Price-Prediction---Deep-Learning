@@ -207,34 +207,20 @@ def data_scaling(df,scaling_method):
 
 	return res
 
-def convert_to_timeseries_and_write_data(data_frame):
+def write_data(data_frame):
 
 	values = data_frame.values
+	
+	w = csv.writer(open("../Datasets/Final_Data/regression_data(10)_btc.csv", "w"))
 
-	window = 3
-	start = 0
-	end = window
-	timeseries = []
-	while(end<len(values)):
-		v = values[start:end]
-		timeserie = []
-		for i in range(0,len(v)):
-			if (i!=(len(v) - 1)):
-				timeserie.append(v[i][0:-1])
-			else:
-				timeserie.append(v[i][0:])
-				flattened_list = [y for x in timeserie for y in x]
-		timeseries.append(flattened_list)
+	cols = ['Open','High','Close','Volume','MarketCup','Close']
+	w.writerow(cols)
 
-		start += 1
-		end += 1
-
-		w = csv.writer(open("../Datasets/Final_Data/regression_data(10)_btc.csv", "w"))
-		for i in range(0,len(timeseries)):
-			l = []
-			for j in range(0,len(timeseries[i])):
-				l.append(str(timeseries[i][j]))
-			w.writerow(l)
+	for v in values:
+		l=[]
+		for dat in v:
+			l.append(str(dat))
+		w.writerow(l)
 
 def main():
 
@@ -317,7 +303,9 @@ def main():
 		btc_data = get_bitcoin_batch(data)
 		btc_scaled_data = data_scaling(btc_data,'standarization')
 
-		convert_to_timeseries_and_write_data(btc_scaled_data)
+		print btc_scaled_data
+
+		write_data(btc_scaled_data)
 
 
 if __name__ == "__main__":

@@ -55,36 +55,39 @@ def convert_data_to_arrays(data,flag):
 
     return np.array(list_of_vectors),np.array(list_of_labels), feature_num
 
-def convert_data_to_arrays2(data):
+def convert_data_to_arrays_regression(data):
 
-    list_of_vectors = []
-    list_of_labels = []
+	print data
 
+	values = data.values
 
-    for row in data.iterrows():
+	list_of_vectors = []
+	list_of_labels = []
+	window = 3
 
-        #row[0] is record id 1,2,3...
-        #row[1][0] contains the asset
-        #row[1][1] contains the date
-        #row[1][0-(last-2)] contains all features
-        #row[1][last-1] contains the label
+	start = 0
+	end = window
+	
+	while(end<len(data)):
+		v = values[start:end]
+		timeserie = []
+		labels = []
+		for i in range(0,len(v)):
+			timeserie.append(v[i][0:-1])
+			labels.append(v[i][-1])
+		flattened_vectors = [y for x in timeserie for y in x]
 
-        vector = []
+		print flattened_vectors
+		print '-----'
+		print labels
 
-        for i in range(0,(len(row[1])-1)):
-            vector.append(row[1][i])
+		list_of_vectors.append(np.array(flattened_vectors))
+		list_of_labels.append(np.array(labels))
 
-        arr = np.array(vector)
-        arr = arr.astype(np.float32)
-        list_of_vectors.append(arr)
+		start += 1
+		end += 1
 
-        arr = np.array(row[1][(len(row[1])-1)])
-        arr = arr.astype(np.float32)
-        list_of_labels.append(arr)
-
-    feature_num = len(row[1])-1
-
-    return np.array(list_of_vectors),np.array(list_of_labels), feature_num
+	return np.array(list_of_vectors),np.array(list_of_labels), len(list_of_vectors)
 
 def load_dataset(dir_name):
 

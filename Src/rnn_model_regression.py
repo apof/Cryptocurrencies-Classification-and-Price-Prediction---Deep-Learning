@@ -11,19 +11,19 @@ DATA_DIR = "../Datasets/Final_Data/regression_data(10)_btc.csv"
 # RNN parametres
 learning_rate = 0.001
 epochs = 200
-output_neurons = 1
+output_neurons = 3
 n_units = 128
 input_length = 3
 number_of_sequences = 5
-batch_size = 32
-num_layers = 1
+batch_size = 128
+num_layers = 2
 drop_prob = 0.5
 
 # DNN parametres
 n_hidden_1 = 32
 
 xplaceholder= tf.placeholder('float',[None,input_length,number_of_sequences])
-yplaceholder = tf.placeholder('float',[None,output_neurons])
+yplaceholder = tf.placeholder('float',[None,input_length])
 
 
 def dnn(lstm_output):
@@ -72,8 +72,16 @@ print("Loading data..")
 
 
 data = utils.load_dataset(DATA_DIR)
-inputs,labels,feature_num = utils.convert_data_to_arrays2(data)
+print data.shape
+inputs,labels,feature_num = utils.convert_data_to_arrays_regression(data)
+print inputs.shape
+print labels.shape
 train_inputs,train_labels,test_inputs,test_labels = utils.smash_data_for_timeseries(inputs,labels)
+
+print train_inputs.shape
+print train_labels.shape
+print test_inputs.shape
+print test_labels.shape
 
 test_asset = 'btc'
 
@@ -98,7 +106,7 @@ with tf.Session() as sess:
 			batch_y = utils.next_batch(train_labels,i,batch_size)
 
 			batch_x = batch_x.reshape((-1,input_length,number_of_sequences))
-			batch_y = batch_y.reshape((-1,output_neurons))
+			batch_y = batch_y.reshape((-1,input_length))
 
 			_, c = sess.run([optimizer, cost], feed_dict={xplaceholder: batch_x, yplaceholder: batch_y})
 
