@@ -5,6 +5,9 @@ import pandas as pd
 import time
 from datetime import datetime
 import math
+from sklearn import preprocessing
+import math
+from scipy import stats
 
 
 def full_vector(row):
@@ -171,78 +174,150 @@ def save_data_as_timeseries(merged_dict,assets_number,window):
 
 
 	return timeseries_dictionary
-		
+
+
+def get_bitcoin_batch(data):
+
+	data = data[data.Volume != '-']
+	data = data[data.MarketCap != '-']
+
+	data.set_index("Symbol", inplace=True)
+	btc_frame = data.loc['BTC']
+
+	columnsTitles=["Open","High","Close","Volume","MarketCap","Low"]
+	btc_frame=btc_frame.reindex(columns=columnsTitles)
+
+	return btc_frame
+
+
+def data_scaling(df,scaling_method):
 	
+	#returns a numpy array
+	x = df.values
+
+	#check that standarization is correct
+	#transposed_df = df.transpose()
+	#xx = transposed_df.values
+	#print stats.zscore(xx[0])
+
+	if(scaling_method == 'standarization'):
+		res = pd.DataFrame(preprocessing.StandardScaler().fit_transform(x),columns=df.columns, index=df.index)
+	elif(scaling_method == 'normalization'):
+		res = pd.DataFrame(preprocessing.MinMaxScaler().fit_transform(x),columns=df.columns, index=df.index)
+
+	return res
+
+def convert_to_timeseries_and_write_data(data_frame):
+
+	values = data_frame.values
+
+	window = 3
+	start = 0
+	end = window
+	timeseries = []
+	while(end<len(values)):
+		v = values[start:end]
+		timeserie = []
+		for i in range(0,len(v)):
+			if (i!=(len(v) - 1)):
+				timeserie.append(v[i][0:-1])
+			else:
+				timeserie.append(v[i][0:])
+				flattened_list = [y for x in timeserie for y in x]
+		timeseries.append(flattened_list)
+
+		start += 1
+		end += 1
+
+		w = csv.writer(open("../Datasets/Final_Data/regression_data(10)_btc.csv", "w"))
+		for i in range(0,len(timeseries)):
+			l = []
+			for j in range(0,len(timeseries[i])):
+				l.append(str(timeseries[i][j]))
+			w.writerow(l)
+
 def main():
 
-	csv_dict1,col1_names = convert_csv_to_dict("../Datasets/Data_to_merge/all_vectors_prev_window_label.csv",'timestamp')
-	csv_dict2,col2_names = convert_csv_to_dict("../Datasets/Data_to_merge/coins_dev_history.csv",'Date')
-	csv_dict3,col3_names = convert_csv_to_dict("../Datasets/Data_to_merge/crypto_ohlcv.csv",'Date')
+	flag = 1
 
-	merged_dict1 = merge_dicts(csv_dict1,csv_dict2)
+	if(flag==0):
 
-	merged_dict2 = merge_dicts(merged_dict1,csv_dict3)
+		csv_dict1,col1_names = convert_csv_to_dict("../Datasets/Data_to_merge/all_vectors_prev_window_label.csv",'timestamp')
+		csv_dict2,col2_names = convert_csv_to_dict("../Datasets/Data_to_merge/coins_dev_history.csv",'Date')
+		csv_dict3,col3_names = convert_csv_to_dict("../Datasets/Data_to_merge/crypto_ohlcv.csv",'Date')
 
-	print("Vectors obdained finally: " + str(len(merged_dict2)))
+		merged_dict1 = merge_dicts(csv_dict1,csv_dict2)
 
-	col_names_merge = col3_names + col2_names + col1_names
+		merged_dict2 = merge_dicts(merged_dict1,csv_dict3)
 
-	col_names_new = ['asset','date'] + col_names_merge
+		print("Vectors obdained finally: " + str(len(merged_dict2)))
 
-	#create col_names for timeseries
-	window = 10
-	col_names_timeseries = []
-	for i in range(0,window):
-		for x in col_names_merge[0:-1]:
-			col_names_timeseries.append(x + '_' + str(i))
+		col_names_merge = col3_names + col2_names + col1_names
 
-	col_names_timeseries_new =  ['asset','date'] + col_names_timeseries + ['label']
+		col_names_new = ['asset','date'] + col_names_merge
+
+		#create col_names for timeseries
+		window = 4
+		col_names_timeseries = []
+		for i in range(0,window):
+			for x in col_names_merge[0:-1]:
+				col_names_timeseries.append(x + '_' + str(i))
+
+		col_names_timeseries_new =  ['asset','date'] + col_names_timeseries + ['label']
 
 
-	## create a dictionary of numbers of every asset
-	num_dict = {}
-	for key in sorted(merged_dict2.keys()):
-		val = num_dict.get(key[0])
-		if(val!=None):
-			num_dict[key[0]] = num_dict[key[0]] + 1;
-		else:
-			num_dict[key[0]] = 1
+		## create a dictionary of numbers of every asset
+		num_dict = {}
+		for key in sorted(merged_dict2.keys()):
+			val = num_dict.get(key[0])
+			if(val!=None):
+				num_dict[key[0]] = num_dict[key[0]] + 1;
+			else:
+				num_dict[key[0]] = 1
 
-	asset_cols = []
-	asset_nums = []
-	for key in sorted(num_dict.keys()):
-		asset_cols.append(str(key))
-		asset_nums.append(str(num_dict[key]))
+		asset_cols = []
+		asset_nums = []
+		for key in sorted(num_dict.keys()):
+			asset_cols.append(str(key))
+			asset_nums.append(str(num_dict[key]))
 
-	w = csv.writer(open("../Datasets/assets_number.csv", "w"))
-	w.writerow(asset_cols)
-	w.writerow(asset_nums)
+		w = csv.writer(open("../Datasets/assets_number.csv", "w"))
+		w.writerow(asset_cols)
+		w.writerow(asset_nums)
 
-	### the final dictionary is being converted into csv file
-	w = csv.writer(open("../Datasets/all_vectors_merged.csv", "w"))
-	w.writerow(col_names_new)
-	for key in sorted(merged_dict2.keys()):
-		l = [str(key[0]),str(key[1])]
-		for x in merged_dict2[key]:
-			l.append(str(x))
+		### the final dictionary is being converted into csv file
+		w = csv.writer(open("../Datasets/all_vectors_merged.csv", "w"))
+		w.writerow(col_names_new)
+		for key in sorted(merged_dict2.keys()):
+			l = [str(key[0]),str(key[1])]
+			for x in merged_dict2[key]:
+				l.append(str(x))
 
-		w.writerow(l)
+			w.writerow(l)
 
-	time_dict = save_data_as_timeseries(merged_dict2,asset_nums,window)
+		time_dict = save_data_as_timeseries(merged_dict2,asset_nums,window)
 
-	print("Timeseries Vectors obdained finally: " + str(len(time_dict)))
+		print("Timeseries Vectors obdained finally: " + str(len(time_dict)))
 
-	### the final csv must have the form: asset date feature1 feature2 .... featureN label
-	### assets and dates are in increasing order
-	### the final timeseries dictionary is being converted into csv file
-	w = csv.writer(open("../Datasets/normalized_all_vectors_merged_timeseries.csv", "w"))
-	w.writerow(col_names_timeseries_new)
-	for key in sorted(time_dict.keys()):
-		l = [str(key[0]),str(key[1])]
-		for x in time_dict[key]:
-			l.append(str(x))
+		### the final csv must have the form: asset date feature1 feature2 .... featureN label
+		### assets and dates are in increasing order
+		### the final timeseries dictionary is being converted into csv file
+		w = csv.writer(open("../Datasets/normalized_all_vectors_merged_timeseries.csv", "w"))
+		w.writerow(col_names_timeseries_new)
+		for key in sorted(time_dict.keys()):
+			l = [str(key[0]),str(key[1])]
+			for x in time_dict[key]:
+				l.append(str(x))
 
-		w.writerow(l)
+			w.writerow(l)
+
+	else:
+
+		data = utils.load_dataset("../Datasets/Data_to_merge/crypto_ohlcv.csv")
+		btc_data = get_bitcoin_batch(data)
+		btc_scaled_data = data_scaling(btc_data,'standarization')
+
+		convert_to_timeseries_and_write_data(btc_scaled_data)
 
 
 if __name__ == "__main__":

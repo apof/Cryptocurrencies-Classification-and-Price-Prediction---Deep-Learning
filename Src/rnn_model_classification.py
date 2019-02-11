@@ -15,12 +15,13 @@ TEST_DIR = "../Datasets/Final_Data/normalized_all_vectors_merged_timeseries(10)_
 learning_rate = 0.001
 epochs = 200
 n_classes = 1
-n_units = 128
+n_units = 32
 input_length = 10
 number_of_sequences = 18
 batch_size = 64
-num_layers = 2
-drop_prob = 0.5
+num_layers = 1
+drop_prob = 0.7
+keep_prob = 0.3
 
 xplaceholder= tf.placeholder('float',[None,input_length,number_of_sequences])
 yplaceholder = tf.placeholder('float',[None,n_classes])
@@ -46,7 +47,9 @@ def multilayer_rnn_model(cell_flag):
 	w_softmax = tf.Variable(tf.truncated_normal([n_units, n_classes]))
 	b_softmax = tf.Variable(tf.random_normal([n_classes]))
 	logit = tf.matmul(output, w_softmax) + b_softmax
-	return logit
+	dropped_out_logits = tf.nn.dropout(logit, keep_prob)
+
+	return dropped_out_logits
 
 logit = multilayer_rnn_model(1)
 cost = tf.reduce_mean(tf.nn.sigmoid_cross_entropy_with_logits(logits=logit, labels=yplaceholder))
@@ -62,12 +65,24 @@ init = tf.global_variables_initializer()
 print("Loading data..")
 
 # train mode=0 train and test for btc --- =1 train with btc and 1,2 other coins -> test for a random coin
+# validation mode = 1 --> validation with train set --- validation mode =0 --> validation with the half of test
+# and test with the other half
+
 train_mode = 1
+validation_mode = 1
 
 if(train_mode==1):
 	data = utils.load_dataset(DATA_DIR)
 	inputs,labels,feature_num = utils.convert_data_to_arrays(data,1)
 	train_inputs,train_labels,test_inputs,test_labels = utils.smash_data_for_timeseries(inputs,labels)
+
+	if(validation_mode == 1):
+		valid_inputs = train_inputs
+		valid_labels = train_labels
+	else:
+		#test_inputs,test_labels,valid_inputs,valid_labels = utils.split_test_and_valid(test_inputs,test_labels)
+		valid_inputs = test_inputs
+		valid_labels = test_labels
 else:
 	train_data = utils.load_dataset(TRAIN_DIR)
 	train_inputs,train_labels,feature_num = utils.convert_data_to_arrays(train_data,1)
@@ -75,6 +90,13 @@ else:
 	test_inputs,test_labels,feature_num = utils.convert_data_to_arrays(test_data,1)
 	_,_,test_inputs,test_labels = utils.smash_data_for_timeseries(test_inputs,test_labels)
 
+	if(validation_mode == 1):
+		valid_inputs = train_inputs
+		valid_labels = train_labels
+	else:
+		#test_inputs,test_labels,valid_inputs,valid_labels = utils.split_test_and_valid(test_inputs,test_labels)
+		valid_inputs = test_inputs
+		valid_labels = test_labels
 
 test_asset = 'btc'
 
@@ -89,6 +111,10 @@ print("Optimization starting..")
     
 with tf.Session() as sess:
 	sess.run(init)
+
+	epoch_loss_list = []
+	epoch_loss_list2 = []
+	epoch_index_list = []
 
 	for epoch in range(epochs):
 		epoch_loss = 0
@@ -107,7 +133,18 @@ with tf.Session() as sess:
 
 			epoch_loss += c/train_iters
 
-		print('Epoch', epoch+1, 'completed out of', epochs, 'loss:', epoch_loss)
+		valid_x = valid_inputs.reshape((-1,input_length,number_of_sequences))
+		valid_y = valid_labels.reshape((-1,n_classes))
+		valid_loss = sess.run([cost], feed_dict={xplaceholder: valid_x, yplaceholder: valid_y})
+
+		epoch_loss_list.append(epoch_loss)
+		epoch_index_list.append(epoch+1)
+		epoch_loss_list2.append(valid_loss)
+
+		print('Epoch', epoch+1, 'completed out of', epochs, 'loss:', epoch_loss, ' validation loss: ',valid_loss)
+
+	utils.plot_epoch_loss(epoch_index_list,epoch_loss_list,epoch_loss_list2)
+
 
 	print("Optimization Finished!")
 

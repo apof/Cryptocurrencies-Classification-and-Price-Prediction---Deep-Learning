@@ -9,6 +9,9 @@ import math
 import numpy
 from sklearn.metrics import f1_score, accuracy_score, recall_score, precision_score, confusion_matrix
 import tensorflow as tf
+import os
+from sklearn.metrics import mean_absolute_error
+
 
 def convert_data_to_arrays(data,flag):
 
@@ -52,6 +55,37 @@ def convert_data_to_arrays(data,flag):
 
     return np.array(list_of_vectors),np.array(list_of_labels), feature_num
 
+def convert_data_to_arrays2(data):
+
+    list_of_vectors = []
+    list_of_labels = []
+
+
+    for row in data.iterrows():
+
+        #row[0] is record id 1,2,3...
+        #row[1][0] contains the asset
+        #row[1][1] contains the date
+        #row[1][0-(last-2)] contains all features
+        #row[1][last-1] contains the label
+
+        vector = []
+
+        for i in range(0,(len(row[1])-1)):
+            vector.append(row[1][i])
+
+        arr = np.array(vector)
+        arr = arr.astype(np.float32)
+        list_of_vectors.append(arr)
+
+        arr = np.array(row[1][(len(row[1])-1)])
+        arr = arr.astype(np.float32)
+        list_of_labels.append(arr)
+
+    feature_num = len(row[1])-1
+
+    return np.array(list_of_vectors),np.array(list_of_labels), feature_num
+
 def load_dataset(dir_name):
 
     data = pd.read_csv(dir_name, sep=",")
@@ -73,6 +107,12 @@ def smash_data_for_timeseries(inputs,labels):
 
     train_num = int(math.floor(0.75*len(inputs)))
     return inputs[0:train_num],labels[0:train_num],inputs[train_num:len(inputs)],labels[train_num:len(inputs)]
+
+def split_test_and_valid(inputs,labels):
+
+    test_num = int(math.floor(0.5*len(inputs)))
+    return inputs[0:test_num],labels[0:test_num],inputs[test_num:len(inputs)],labels[test_num:len(inputs)]
+
 
 
 def next_batch(data, num_of_batch,batch_size):
@@ -184,7 +224,7 @@ def figure_faults(test,data,preds):
             
     fig = plt.figure(figsize=(8,8))
     plt.scatter(x, y, c=l, cmap=matplotlib.colors.ListedColormap(c))
-    fig.savefig('Plots/' +'preds_plot.png')
+    fig.savefig('Plots/Plots_Res/' + str(os.getpid()) + '_preds_plot.png')
 
     cb = plt.colorbar()
     loc = np.arange(0,max(l),max(l)/float(len(c)))
@@ -222,7 +262,7 @@ def figure_faults_timeseries(preds,asset):
             
     fig = plt.figure(figsize=(8,8))
     plt.scatter(time, prices, c=labels, cmap=matplotlib.colors.ListedColormap(c))
-    fig.savefig('Plots_Results/' + asset + '_preds_plot.png')
+    fig.savefig('Plots_Results/Plots_Res/' + asset + '_' + str(os.getpid()) + '_preds_plot.png')
 
     cb = plt.colorbar()
     loc = np.arange(0,max(labels),max(labels)/float(len(c)))
@@ -254,4 +294,16 @@ def get_variables_of_model(sess):
         print v
 
         
+def plot_epoch_loss(epoch_index_list,epoch_loss_list,validation_loss_list):
+    plt.ylabel('Epoch loss')
+    plt.xlabel('Epoch #')
+    plt.title('Train vs Validation loss')
+    plt.plot(epoch_index_list, epoch_loss_list,label = "Traing Loss")
+    plt.plot(epoch_index_list, validation_loss_list,label = "Validation Loss")
+    plt.savefig('Plots_Results/Epoch_losses/'+'plot_'+str(os.getpid())+'.png')
+
+def compute_error(labels,preds):
+    assert len(labels) == len(preds)
+    return mean_absolute_error(labels,preds)
+
 

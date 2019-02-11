@@ -11,6 +11,7 @@ from scipy import stats
 
 DATA_DIR = "../Datasets/all_vectors_merged.csv"
 ASSETS_DIR = "../Datasets/assets_number.csv"
+DATA_DIR_2 = "../Datasets/Data_to_merge/crypto_ohlcv.csv"
 
 def plot_features(data):
 
@@ -69,44 +70,3 @@ def plot_features(data):
 	plt.xlabel('data index')
 	plt.ylabel(Fet_names[i])
 	plt.savefig('Plots_Results/'+Fet_names[i]+'_btc.png')
-
-def get_bitcoin_batch(data):
-
-	data.set_index("asset", inplace=True)
-	btc_frame = data.loc['btc']
-
-	#return all btc columns exept from date
-	return btc_frame.loc[:, btc_frame.columns != 'date']
-
-
-def data_scaling(df,scaling_method):
-	
-	#returns a numpy array
-	x = df.values
-
-	#check that standarization is correct
-	#transposed_df = df.transpose()
-	#xx = transposed_df.values
-	#print stats.zscore(xx[0])
-
-	if(scaling_method == 'standarization'):
-		res = pd.DataFrame(preprocessing.StandardScaler().fit_transform(x),columns=df.columns, index=df.index)
-	elif(scaling_method == 'normalization'):
-		res = pd.DataFrame(preprocessing.MinMaxScaler().fit_transform(x),columns=df.columns, index=df.index)
-
-	return res
-
-
-def main():
-
-	data = utils.load_dataset(DATA_DIR)
-	#plot_features(data)
-
-	btc_data = get_bitcoin_batch(data)
-	btc_scaled_data = data_scaling(btc_data,'standarization')
-
-	print btc_scaled_data
-
-
-if __name__ == "__main__":
-    main()
