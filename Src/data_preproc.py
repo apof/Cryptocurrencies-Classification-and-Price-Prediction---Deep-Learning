@@ -213,7 +213,7 @@ def write_data(data_frame):
 
 	values = data_frame.values
 	
-	w = csv.writer(open("../Datasets/Final_Data/regression_data(10)_btc.csv", "w"))
+	w = csv.writer(open("../Datasets/Final_Data/regression_data_btc.csv", "w"))
 
 	cols = ['Open','High','Close','Volume','MarketCup','Close']
 	w.writerow(cols)

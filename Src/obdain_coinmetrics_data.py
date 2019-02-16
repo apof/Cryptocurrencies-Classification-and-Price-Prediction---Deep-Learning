@@ -174,7 +174,7 @@ def obdain_data_from_CoinMetrics():
 			window = 30
 			#labels,l = next_prev_labeling(price)
 			labels,l = prev_window_labeling(price,window)
-			if(asset=='btc' or asset=='eth'):
+			if(asset=='btc' or asset=='dash'):
 				utils.figure_and_save_price(price,asset,l,window)
 
 			#prev_len = len(vector_dict)

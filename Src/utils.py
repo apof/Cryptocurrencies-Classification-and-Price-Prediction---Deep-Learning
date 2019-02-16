@@ -61,7 +61,7 @@ def convert_data_to_arrays_regression(data):
 
     list_of_vectors = []
     list_of_labels = []
-    window = 3
+    window = 7
 
     start = 0
     end = window
@@ -75,7 +75,7 @@ def convert_data_to_arrays_regression(data):
         flattened_vectors = [y for x in timeserie for y in x]
         list_of_vectors.append(np.array(flattened_vectors))
 
-        list_of_labels.append(np.array(values[end]))
+        list_of_labels.append(np.array(values[end][len(values[end])-1]))
         start += 1
         end += 1
 
@@ -100,7 +100,7 @@ def smash_train_test(df):
 
 def smash_data_for_timeseries(inputs,labels):
 
-    train_num = int(math.floor(0.9*len(inputs)))
+    train_num = int(math.floor(0.65*len(inputs)))
     return inputs[0:train_num],labels[0:train_num],inputs[train_num:len(inputs)],labels[train_num:len(inputs)]
 
 def split_test_and_valid(inputs,labels):
@@ -197,7 +197,7 @@ def figure_faults(test,data,preds):
             l.append(data_dict[key])
 
     price_dict = {}
-    data2 = pd.read_csv("../Datasets/btc_prices.csv")
+    data2 = pd.read_csv("../../Datasets/btc_prices.csv")
     for row in data2.iterrows():
         a = datetime.fromtimestamp(row[1][0])
         aa = a.strftime("%Y-%m-%d")
@@ -219,7 +219,7 @@ def figure_faults(test,data,preds):
             
     fig = plt.figure(figsize=(8,8))
     plt.scatter(x, y, c=l, cmap=matplotlib.colors.ListedColormap(c))
-    fig.savefig('Plots/Plots_Res/' + str(os.getpid()) + '_preds_plot.png')
+    fig.savefig('../Plots_Results/' + str(os.getpid()) + '_preds_plot.png')
 
     cb = plt.colorbar()
     loc = np.arange(0,max(l),max(l)/float(len(c)))
@@ -230,7 +230,7 @@ def figure_faults_timeseries(preds,asset):
 
     prices = []
     time = []
-    data2 = pd.read_csv("../Datasets/" + asset + "_prices.csv")
+    data2 = pd.read_csv("../../Datasets/" + asset + "_prices.csv")
     for row in data2.iterrows():
         prices.append(row[1][1])
         time.append(row[1][0])
@@ -256,8 +256,9 @@ def figure_faults_timeseries(preds,asset):
     c = np.array(['red','yellow','black'])
             
     fig = plt.figure(figsize=(8,8))
+    plt.title('Classification Results')
     plt.scatter(time, prices, c=labels, cmap=matplotlib.colors.ListedColormap(c))
-    fig.savefig('Plots_Results/Plots_Res/' + asset + '_' + str(os.getpid()) + '_preds_plot.png')
+    fig.savefig('../Plots_Results/Plots_Res/' + asset + '_' + str(os.getpid()) + '_preds_plot.png')
 
     cb = plt.colorbar()
     loc = np.arange(0,max(labels),max(labels)/float(len(c)))
@@ -295,7 +296,7 @@ def plot_epoch_loss(epoch_index_list,epoch_loss_list,validation_loss_list):
     plt.title('Train vs Validation loss')
     plt.plot(epoch_index_list, epoch_loss_list,label = "Traing Loss")
     plt.plot(epoch_index_list, validation_loss_list,label = "Validation Loss")
-    plt.savefig('Plots_Results/Epoch_losses/'+'plot_'+str(os.getpid())+'.png')
+    plt.savefig('../Plots_Results/Epoch_losses/'+'plot_'+str(os.getpid())+'.png')
 
 def compute_error(labels,preds):
     assert len(labels) == len(preds)
@@ -303,10 +304,10 @@ def compute_error(labels,preds):
 
 def print_preds(close_labels,close_preds,index_list):
 
-    plt.title('Prediction vd True Prices')
+    plt.title('Prediction vs True Prices')
     plt.plot(index_list, close_preds,label = "Predictions")
     plt.plot(index_list, close_labels,label = "Prices")
-    plt.savefig('Plots_Results/Regression_results/'+'plot_'+str(os.getpid())+'.png')
+    plt.savefig('../Plots_Results/Regression_results/'+'plot_'+str(os.getpid())+'.png')
 
 
 
