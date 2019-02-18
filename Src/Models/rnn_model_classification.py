@@ -8,22 +8,21 @@ import sys
 sys.path.append("..")
 import utils
 
-DATA_DIR = "../../Datasets/Final_Data/normalized_all_vectors_merged_timeseries(10)_btc_only.csv"
+DATA_DIR = "../../Datasets/Final_Data/normalized_all_vectors_merged_timeseries(4)_btc_only.csv"
 TRAIN_DIR = "../../Datasets/Final_Data/normalized_all_vectors_merged_timeseries(10)_btc_ltc_eth.csv"
 TEST_DIR = "../../Datasets/Final_Data/normalized_all_vectors_merged_timeseries(10)_dash_only.csv"
 
 
 # RNN parametres
 learning_rate = 0.001
-epochs = 200
+epochs = 150
 n_classes = 1
 n_units = 128
-input_length = 10
+input_length = 4
 number_of_sequences = 18
-batch_size = 64
-num_layers = 2
-drop_prob = 0.2
-keep_prob = 0.8
+batch_size = 256
+num_layers = 1
+drop_prob = 0.3
 
 xplaceholder= tf.placeholder('float',[None,input_length,number_of_sequences])
 yplaceholder = tf.placeholder('float',[None,n_classes])
@@ -49,14 +48,13 @@ def multilayer_rnn_model(cell_flag):
 	w_softmax = tf.Variable(tf.truncated_normal([n_units, n_classes]))
 	b_softmax = tf.Variable(tf.random_normal([n_classes]))
 	logit = tf.matmul(output, w_softmax) + b_softmax
-	dropped_out_logits = tf.nn.dropout(logit, keep_prob)
 
-	return dropped_out_logits
+	return logit
 
-logit = multilayer_rnn_model(1)
+logit = multilayer_rnn_model(0)
 cost = tf.reduce_mean(tf.nn.sigmoid_cross_entropy_with_logits(logits=logit, labels=yplaceholder))
 
-optim = 1
+optim = 0
 if(optim==0):
 	optimizer = tf.train.RMSPropOptimizer(learning_rate=learning_rate).minimize(cost)
 else:

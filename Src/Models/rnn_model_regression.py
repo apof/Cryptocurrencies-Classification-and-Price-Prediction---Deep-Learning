@@ -12,14 +12,14 @@ DATA_DIR = "../../Datasets/Final_Data/regression_data_btc_norm.csv"
 
 # RNN parametres
 learning_rate = 0.001
-epochs = 1000
+epochs = 1500
 output_neurons = 1
-n_units = 64
+n_units = 128
 input_length = 7
 number_of_sequences = 6
-batch_size = 32
+batch_size = 64
 num_layers = 1
-drop_prob = 0.2
+drop_prob = 0.1
 
 # DNN parametres
 n_hidden_1 = 32
