@@ -75,7 +75,8 @@ def convert_data_to_arrays_regression(data):
         flattened_vectors = [y for x in timeserie for y in x]
         list_of_vectors.append(np.array(flattened_vectors))
 
-        list_of_labels.append(np.array(values[end][len(values[end])-1]))
+        mean_price = (np.array(values[end][len(values[end])-1]) + np.array(values[end][1]))/2 
+        list_of_labels.append(mean_price)
         start += 1
         end += 1
 
@@ -100,7 +101,7 @@ def smash_train_test(df):
 
 def smash_data_for_timeseries(inputs,labels):
 
-    train_num = int(math.floor(0.65*len(inputs)))
+    train_num = int(math.floor(0.85*len(inputs)))
     return inputs[0:train_num],labels[0:train_num],inputs[train_num:len(inputs)],labels[train_num:len(inputs)]
 
 def split_test_and_valid(inputs,labels):

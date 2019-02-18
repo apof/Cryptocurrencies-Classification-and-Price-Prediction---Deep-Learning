@@ -215,7 +215,7 @@ def write_data(data_frame):
 	
 	w = csv.writer(open("../Datasets/Final_Data/regression_data_btc.csv", "w"))
 
-	cols = ['Open','High','Close','Volume','MarketCup','Close']
+	cols = ['Open','High','Close','Volume','MarketCup','Low']
 	w.writerow(cols)
 
 	for v in values:
@@ -303,7 +303,7 @@ def main():
 
 		data = utils.load_dataset("../Datasets/Data_to_merge/crypto_ohlcv.csv")
 		btc_data = get_bitcoin_batch(data)
-		btc_scaled_data = data_scaling(btc_data,'standarization')
+		btc_scaled_data = data_scaling(btc_data,'normalization')
 
 		write_data(btc_scaled_data)
 
