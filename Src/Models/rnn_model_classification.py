@@ -15,18 +15,42 @@ TEST_DIR = "../../Datasets/Final_Data/normalized_all_vectors_merged_timeseries(1
 
 # RNN parametres
 learning_rate = 0.001
-epochs = 150
+epochs = 300
 n_classes = 1
-n_units = 128
+n_units = 70
 input_length = 4
 number_of_sequences = 18
-batch_size = 256
+batch_size = 128
 num_layers = 1
-drop_prob = 0.3
+drop_prob = 0.4
+
+#one dir rnn good params 60-70
+# 0.001,300,1,100,4,18,128,1,0.2
 
 xplaceholder= tf.placeholder('float',[None,input_length,number_of_sequences])
 yplaceholder = tf.placeholder('float',[None,n_classes])
 
+def dense(output):
+
+	w_softmax = tf.Variable(tf.truncated_normal([n_units, n_classes]))
+	b_softmax = tf.Variable(tf.random_normal([n_classes]))
+	logit = tf.matmul(output, w_softmax) + b_softmax
+
+	return logit
+
+# weight and bais wrappers
+def weight_variable(shape):
+    initer = tf.truncated_normal_initializer(stddev=0.01)
+    return tf.get_variable('W',
+                           dtype=tf.float32,
+                           shape=shape,
+                           initializer=initer)
+
+def bias_variable(shape):
+    initial = tf.constant(0., shape=shape, dtype=tf.float32)
+    return tf.get_variable('b',
+                           dtype=tf.float32,
+                           initializer=initial)
 
 def multilayer_rnn_model(cell_flag):
 
@@ -44,14 +68,29 @@ def multilayer_rnn_model(cell_flag):
 	lstm_layers = rnn.MultiRNNCell(lstm_cells)
 	outputs, states = tf.nn.static_rnn(lstm_layers, x, dtype=tf.float32)
 
-	output = outputs[-1]
-	w_softmax = tf.Variable(tf.truncated_normal([n_units, n_classes]))
-	b_softmax = tf.Variable(tf.random_normal([n_classes]))
-	logit = tf.matmul(output, w_softmax) + b_softmax
+	return dense(outputs[-1])
+	
 
-	return logit
+def bidirectional_rnn_model(cell_flag):
 
-logit = multilayer_rnn_model(0)
+	x = tf.unstack(xplaceholder, input_length, axis=1)
+	lstm_fw_cell = rnn.GRUCell(n_units)
+	lstm_fw_cell = tf.nn.rnn_cell.DropoutWrapper(lstm_fw_cell, output_keep_prob=1-drop_prob)
+
+	lstm_bw_cell = rnn.GRUCell(n_units)
+	lstm_bw_cell = tf.nn.rnn_cell.DropoutWrapper(lstm_bw_cell, output_keep_prob=1-drop_prob)
+
+	outputs, _, _ = rnn.static_bidirectional_rnn(lstm_fw_cell, lstm_bw_cell, x,
+                                                 dtype=tf.float32)
+
+	w = weight_variable(shape = [2*n_units,n_classes])
+	b = bias_variable(shape = [n_classes])
+
+	return tf.matmul(outputs[-1], w) + b
+
+#logit = multilayer_rnn_model(0)
+logit = bidirectional_rnn_model(0)
+
 cost = tf.reduce_mean(tf.nn.sigmoid_cross_entropy_with_logits(logits=logit, labels=yplaceholder))
 
 optim = 0
@@ -98,6 +137,15 @@ else:
 		valid_inputs = test_inputs
 		valid_labels = test_labels
 
+good,bad = utils.good_bad_number(train_labels)
+
+print(good)
+print(bad)
+
+print(len(test_labels))
+print(data.shape)
+
+
 test_asset = 'btc'
 
 train_iters = 0
@@ -138,13 +186,13 @@ with tf.Session() as sess:
 		#valid_loss = sess.run([cost], feed_dict={xplaceholder: valid_x, yplaceholder: valid_y})
 		valid_loss = 0
 
-		epoch_loss_list.append(epoch_loss)
-		epoch_index_list.append(epoch+1)
-		epoch_loss_list2.append(valid_loss)
+		#epoch_loss_list.append(epoch_loss)
+		#epoch_index_list.append(epoch+1)
+		#epoch_loss_list2.append(valid_loss)
 
 		print('Epoch', epoch+1, 'completed out of', epochs, 'loss:', epoch_loss, ' validation loss: ',valid_loss)
 
-	utils.plot_epoch_loss(epoch_index_list,epoch_loss_list,epoch_loss_list2)
+	#utils.plot_epoch_loss(epoch_index_list,epoch_loss_list,epoch_loss_list2)
 
 
 	print("Optimization Finished!")
